@@ -1,9 +1,12 @@
-from PIL import Image, ImageEnhance
-import os
 import json
+import os
+
+from PIL import Image, ImageEnhance
 
 
-def image_generator(background, overlay, animated, texture_type, frametime=1, alpha=75, saturation=1.5):
+def image_generator(
+    background: Image.Image, overlay: Image.Image, animated: bool, texture_type: str, frametime: int = 1, alpha: int = 75, saturation: float = 1.5
+) -> None:
     """
     :param background: Actual background image, can be singular 16x16 or 16x(16xn) where n is an integer.
     :param overlay:    Overlay image, i.e. ingot, screw etc. See shapes folder.
@@ -38,7 +41,7 @@ def image_generator(background, overlay, animated, texture_type, frametime=1, al
                 if overlay_copy.getpixel((x, y))[3] == 0:
                     for y_true in range(0, true_image_height, 16):
                         background.putpixel((x, y + y_true), (0, 0, 0, 0))
-            except:
+            except BaseException:
                 None
 
     for x in range(true_image_width):
@@ -57,8 +60,12 @@ def image_generator(background, overlay, animated, texture_type, frametime=1, al
     # Json that will be saved as a .mcmeta file for each associated item. If it is animated.
     if animated:
         # Frametime determines amount of ticks spent on each frame. 20 ticks per second.
-        data = {"animation": {"frametime": frametime, }}
-        with open(f"output/{save_name}.mcmeta", 'w') as f:
+        data = {
+            "animation": {
+                "frametime": frametime,
+            }
+        }
+        with open(f"output/{save_name}.mcmeta", "w") as f:
             json.dump(data, f)
 
     if (texture_type == "item") and save_name in os.listdir("shapes/output"):
@@ -67,7 +74,7 @@ def image_generator(background, overlay, animated, texture_type, frametime=1, al
         overlay_dump.save(f"output/{save_name}_OVERLAY")
 
 
-def main():
+def main() -> None:
     # This is the base image you will be using to cut out your textures.
     background = Image.open("background.png")
     animated = True  # Is texture animated.
@@ -79,7 +86,7 @@ def main():
         if ("DS_Store" not in filename) and ("_OVERLAY" not in filename):
             overlay = Image.open(f"shapes/items/{filename}")
             print(filename)
-            image_generator(background, overlay, animated, "items", frametime=3, alpha=75, saturation=1.5)
+            image_generator(background, overlay, animated, "items", frametime=frametime, alpha=75, saturation=1.5)
             overlay.close()
 
     for filename in os.listdir("shapes/blocks"):
@@ -91,5 +98,5 @@ def main():
             overlay.close()
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()
