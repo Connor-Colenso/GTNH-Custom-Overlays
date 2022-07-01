@@ -5,7 +5,7 @@ from PIL import Image, ImageEnhance
 
 
 def image_generator(
-    background: Image.Image, overlay: Image.Image, animated: bool, texture_type: str, frametime: int = 1, alpha: int = 75, saturation: float = 1.5
+    background: Image.Image, overlay: Image.Image, animated: bool, texture_type: str, frametime: int = 1, alpha: int = 75, saturation: float = 1.5, glued_image=None
 ) -> None:
     """
     :param background: Actual background image, can be singular 16x16 or 16x(16xn) where n is an integer.
@@ -53,6 +53,10 @@ def image_generator(
     # Enhances the colour to prevent white washing.
     background = ImageEnhance.Color(background).enhance(saturation).convert("RGBA")
 
+    if (glued_image != None):
+        for y in range(0, true_image_height, 16):
+            background.paste(glued_image, (0, y), glued_image)
+
     background.save(f"output/{save_name}")
     background.close()
     overlay.close()
@@ -86,7 +90,7 @@ def main() -> None:
         if ("DS_Store" not in filename) and ("_OVERLAY" not in filename):
             overlay = Image.open(f"shapes/items/{filename}")
             print(filename)
-            image_generator(background, overlay, animated, "items", frametime=frametime, alpha=75, saturation=1.5)
+            image_generator(background, overlay, animated, "items", frametime=frametime, alpha=125, saturation=1.5)
             overlay.close()
 
     for filename in os.listdir("shapes/blocks"):
@@ -95,6 +99,15 @@ def main() -> None:
         if "DS_Store" not in filename:
             overlay = Image.open(f"shapes/blocks/{filename}")
             image_generator(background, overlay, animated, "blocks", frametime=3, alpha=75, saturation=1.5)
+            overlay.close()
+
+    for filename in os.listdir("shapes/parts"):
+
+        # Necessary for mac systems given they have hidden DS_Store files.
+        if "DS_Store" not in filename:
+            overlay = Image.open(f"shapes/parts/{filename}")
+            glued_image = Image.open(f"shapes/parts_overlay/{filename}")
+            image_generator(background, overlay, animated, "blocks", frametime=3, alpha=75, saturation=1.5, glued_image=glued_image)
             overlay.close()
 
 
