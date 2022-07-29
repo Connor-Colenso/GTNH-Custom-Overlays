@@ -1,13 +1,28 @@
 import json
-import os
 
 from PIL import Image, ImageEnhance
+import os
+
+from PIL.Image import Resampling
+
+
+def scale_image(image, width, height):
+    return image.resize((width, height), resample=Resampling.BOX)
 
 
 def image_generator(
-    background: Image.Image, overlay: Image.Image, animated: bool, texture_type: str, frametime: int = 1, alpha: int = 75, saturation: float = 1.5, glued_image=None
+        background: Image.Image,
+        overlay: Image.Image,
+        animated: bool,
+        texture_type: str,
+        frametime: int = 1,
+        alpha: int = 75,
+        saturation: float = 1.5,
+        glued_image=None
 ) -> None:
     """
+    :param texture_type:
+    :param saturation: Saturation of the finished image to try remove some white washing from the overlay.
     :param background: Actual background image, can be singular 16x16 or 16x(16xn) where n is an integer.
     :param overlay:    Overlay image, i.e. ingot, screw etc. See shapes folder.
     :param animated:   Is the image animated? If so it will generate an associated mcmeta file.
@@ -18,28 +33,35 @@ def image_generator(
 
     # This script is not the best written but gets the job done.
 
+    # Only get the name of the file, not the directory it is in.
     save_name = overlay.filename[7:]
+
+    true_image_width, true_image_height = background.size
+
+    # Scale up overlay if needed.
+    if true_image_width != 16:
+        overlay = scale_image(overlay, true_image_width, true_image_width)
 
     overlay_copy = overlay.copy()
     overlay_copy = overlay_copy.convert("RGBA")
 
     overlay_width, overlay_height = overlay.size
 
-    true_image_width, true_image_height = background.size
     background = background.convert("RGBA")
     overlay = overlay.convert("RGBA")
 
     overlay.putalpha(alpha)
-    for y in range(0, true_image_height, 16):
+    # Iterate down image.
+    for y in range(0, true_image_height, true_image_width):
         background.paste(overlay, (0, y), overlay)
 
     for x in range(overlay_width):
         for y in range(overlay_height):
             try:
-                if "turbineBlade" in save_name:
-                    print(overlay_copy.getpixel((x, y)))
+                # if "turbineBlade" in save_name:
+                #     None
                 if overlay_copy.getpixel((x, y))[3] == 0:
-                    for y_true in range(0, true_image_height, 16):
+                    for y_true in range(0, true_image_height, true_image_width):
                         background.putpixel((x, y + y_true), (0, 0, 0, 0))
             except BaseException:
                 None
@@ -54,7 +76,7 @@ def image_generator(
     background = ImageEnhance.Color(background).enhance(saturation).convert("RGBA")
 
     if (glued_image != None):
-        for y in range(0, true_image_height, 16):
+        for y in range(0, true_image_height, true_image_width):
             background.paste(glued_image, (0, y), glued_image)
 
     background.save(f"output/{save_name}")
@@ -69,8 +91,12 @@ def image_generator(
                 "frametime": frametime,
             }
         }
-        with open(f"output/{save_name}.mcmeta", "w") as f:
-            json.dump(data, f)
+        if (".png" in save_name):
+            with open(f"output/{save_name}.mcmeta", "w") as f:
+                json.dump(data, f)
+        else:
+            with open(f"output/{save_name}.png.mcmeta", "w") as f:
+                json.dump(data, f)
 
     if (texture_type == "item") and save_name in os.listdir("shapes/output"):
         overlay_dump = Image.new("RGBA", size=(16, 16))
@@ -80,9 +106,34 @@ def image_generator(
 
 def main() -> None:
     # This is the base image you will be using to cut out your textures.
-    background = Image.open("background.png")
-    animated = True  # Is texture animated.
-    frametime = 1  # Ticks per frame of animation.
+    background = Image.open("x.png")
+
+    # Is texture animated. Creates associated mcmeta files with frametime defined below.
+    animated = False
+    # Ticks per frame of animation.
+    frametime = 1
+    # Saturation of the image. This can help bring back colour if it gets whitewashed by the overlays.
+    saturation = 1
+    # Intensity of the overlay. 0-255.
+    alpha = 50
+    # Scale up the background image.
+    scaled_main = False
+
+    if scaled_main:
+        background = scale_image(background, 512, 57856)
+
+    for filename in os.listdir("shapes/parts"):
+
+        # Necessary for mac systems given they have hidden DS_Store files.
+        if "DS_Store" not in filename:
+            overlay = Image.open(f"shapes/parts/{filename}")
+            print(filename)
+            glued_image = Image.open(f"shapes/parts_overlay/{filename}")
+            image_generator(background, overlay, animated, "blocks", frametime=frametime, alpha=alpha,
+                            saturation=saturation,
+                            glued_image=glued_image)
+            overlay.close()
+            print(1/0)
 
     for filename in os.listdir("shapes/items"):
 
@@ -90,7 +141,14 @@ def main() -> None:
         if ("DS_Store" not in filename) and ("_OVERLAY" not in filename):
             overlay = Image.open(f"shapes/items/{filename}")
             print(filename)
-            image_generator(background, overlay, animated, "items", frametime=frametime, alpha=125, saturation=1.5)
+            image_generator(background,
+                            overlay,
+                            animated,
+                            "items",
+                            frametime=frametime,
+                            alpha=alpha,
+                            saturation=saturation
+                            )
             overlay.close()
 
     for filename in os.listdir("shapes/blocks"):
@@ -98,17 +156,17 @@ def main() -> None:
         # Necessary for mac systems given they have hidden DS_Store files.
         if "DS_Store" not in filename:
             overlay = Image.open(f"shapes/blocks/{filename}")
-            image_generator(background, overlay, animated, "blocks", frametime=3, alpha=75, saturation=1.5)
+            print(filename)
+            image_generator(background,
+                            overlay,
+                            animated,
+                            "blocks",
+                            frametime=frametime,
+                            alpha=alpha,
+                            saturation=saturation
+                            )
             overlay.close()
 
-    for filename in os.listdir("shapes/parts"):
-
-        # Necessary for mac systems given they have hidden DS_Store files.
-        if "DS_Store" not in filename:
-            overlay = Image.open(f"shapes/parts/{filename}")
-            glued_image = Image.open(f"shapes/parts_overlay/{filename}")
-            image_generator(background, overlay, animated, "blocks", frametime=3, alpha=75, saturation=1.5, glued_image=glued_image)
-            overlay.close()
 
 
 if __name__ == "__main__":
