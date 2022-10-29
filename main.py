@@ -3,11 +3,11 @@ import json
 from PIL import Image, ImageEnhance
 import os
 
-from PIL.Image import Resampling
+
 
 
 def scale_image(image, width, height):
-    return image.resize((width, height), resample=Resampling.BOX)
+    return image.resize((width, height), resample=Image.BOX)
 
 
 def image_generator(
@@ -108,25 +108,27 @@ def image_generator(
 
 def main() -> None:
     # This is the base image you will be using to cut out your textures.
-    background = Image.open("Trifecta_vertical.png")
+    background = Image.open("XXX.png")
+    # Alternative you can have a solid 16x16 colour here.
+    # background = Image.new(mode='RGB', size=(16, 16), color=(181, 38,   205))
 
     # Is texture animated. Creates associated mcmeta files with frametime defined below.
     animated = True
     # Ticks per frame of animation.
     frametime = 3
     # Saturation of the image. This can help bring back colour if it gets whitewashed by the overlays.
-    saturation = 3
+    saturation = 1.3
     # Intensity of the overlay. 0-255.
-    alpha = 150
+    alpha = 30
     # Scale up the background image.
     scaled_main = False
 
     if scaled_main:
-        background = scale_image(background, 512, 57856)
+        background = scale_image(background, 160, 3200)
 
     for filename in os.listdir("shapes/parts"):
 
-        # Necessary for mac systems given they have hidden DS_Store files.
+        # Necessary for Mac systems given they have hidden DS_Store files.
         if "DS_Store" not in filename:
             overlay = Image.open(f"shapes/parts/{filename}")
             print(filename)
@@ -139,7 +141,7 @@ def main() -> None:
 
     for filename in os.listdir("shapes/items"):
 
-        # DS_Store check necessary for mac systems given they have hidden DS_Store files.
+        # DS_Store check necessary for Mac systems given they have hidden DS_Store files.
         if ("DS_Store" not in filename) and ("_OVERLAY" not in filename):
             overlay = Image.open(f"shapes/items/{filename}")
             print(filename)
@@ -155,7 +157,7 @@ def main() -> None:
 
     for filename in os.listdir("shapes/blocks"):
 
-        # Necessary for mac systems given they have hidden DS_Store files.
+        # Necessary for Mac systems given they have hidden DS_Store files.
         if "DS_Store" not in filename:
             overlay = Image.open(f"shapes/blocks/{filename}")
             try:
