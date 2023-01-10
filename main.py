@@ -108,14 +108,14 @@ def image_generator(
 
 def main() -> None:
     # This is the base image you will be using to cut out your textures.
-    background = Image.open("XXX.png")
+    background = Image.open("whiteSquare.png")
     # Alternative you can have a solid 16x16 colour here.
     # background = Image.new(mode='RGB', size=(16, 16), color=(181, 38,   205))
 
     # Is texture animated. Creates associated mcmeta files with frametime defined below.
     animated = True
     # Ticks per frame of animation.
-    frametime = 3
+    frametime = 1
     # Saturation of the image. This can help bring back colour if it gets whitewashed by the overlays.
     saturation = 1.3
     # Intensity of the overlay. 0-255.
